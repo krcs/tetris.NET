@@ -1,40 +1,57 @@
 ﻿/*
- 
- tetris.NET (16k)
- Author: Krzysztof Cieślak (K!)  
 
- */
-using System;
+Tetris.NET
+
+MIT License
+
+Copyright (c) 2014 Krzysztof Cieślak
+
+Permission  is hereby granted, free  of charge,  to any person obtaining a copy
+of this software and associated documentation files (the "Software"),  to  deal
+in  the Software without restriction,  including without limitation the  rights
+to  use, copy,  modify,  merge, publish, distribute,  sublicense,  and/or  sell
+copies of the Software, and to permit persons to whom the Software is furnished
+to do so, subject to the following conditions:
+
+The above copyright notice and this  permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE  IS PROVIDED  "AS IS",  WITHOUT WARRANTY OF ANY  KIND,  EXPRESS OR
+IMPLIED,  INCLUDING  BUT NOT  LIMITED  TO  THE WARRANTIES  OF  MERCHANTABILITY,
+FITNESS  FOR  A  PARTICULAR  PURPOSE AND NONINFRINGEMENT.  IN  NO  EVENT  SHALL
+THE  AUTHORS  OR  COPYRIGHT  HOLDERS  BE  LIABLE  FOR  ANY  CLAIM,  DAMAGES  OR
+OTHER  LIABILITY,  WHETHER  IN  AN  ACTION  OF  CONTRACT,  TORT  OR  OTHERWISE,
+ARISING  FROM,  OUT  OF  OR  IN CONNECTION WITH  THE SOFTWARE  OR  THE  USE  OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+*/
 
 namespace tetris.NET
 {
-    public class CMatrix<T>
+    internal class CMatrix
     {
-        private readonly Cell<T>[,] _matrix;
+        private readonly Cell[,] _matrix;
 
         public int RowsCount => _matrix.GetLength(1);
 
         public int ColumnsCount => _matrix.GetLength(0);
 
-        public Cell<T> this[int column, int row]
+        public Cell this[int column, int row]
         {
-            get { return _matrix[column, row]; }
-            private set { _matrix[column, row] = value; }
+            get => _matrix[column, row]; 
+            private set => _matrix[column, row] = value; 
         }
 
         public CMatrix(int columns, int rows)
         {
-            if (columns == 0 || rows == 0)
-                throw new ArgumentException("Columns and Rows cannot be zero.");
-
-            _matrix = new Cell<T>[columns, rows];
+            _matrix = new Cell[columns, rows];
 
             for (var colI = 0; colI < columns; colI++)
                 for (var rowI = 0; rowI < rows; rowI++)
-                    _matrix[colI, rowI] = new Cell<T>();
+                    _matrix[colI, rowI] = new Cell();
         }
 
-        public void Clear()
+        public void Clear() 
         {
             foreach (var cell in _matrix) cell.Clear();
         }
@@ -78,9 +95,9 @@ namespace tetris.NET
                 _matrix[colI, rowA].Swap(_matrix[colI, rowB]);
         }
 
-        public CMatrix<T> RotateCW90()
+        public CMatrix RotateCW90()
         {
-            var result = new CMatrix<T>(RowsCount, ColumnsCount);
+            var result = new CMatrix(RowsCount, ColumnsCount);
 
             for (var row = 0; row < RowsCount; row++)
                 for (var column = 0; column < ColumnsCount; column++)
@@ -89,11 +106,8 @@ namespace tetris.NET
             return result;
         }
 
-        public bool CanOverlay(CMatrix<T> subMatrix, int posCol, int posRow)
+        public bool CanOverlay(CMatrix subMatrix, int posCol, int posRow)
         {
-            if (subMatrix == null)
-                throw new ArgumentNullException();
-
             for (var row = 0; row < subMatrix.RowsCount; row++)
                 for (var column = 0; column < subMatrix.ColumnsCount; column++)
                     if (subMatrix[column, row].HasElement)
@@ -107,11 +121,10 @@ namespace tetris.NET
                         if (this[column + posCol, row + posRow].HasElement)
                             return false;
                     }
-
             return true;
         }
 
-        public void Merge(CMatrix<T> subMatrix, int posCol, int posRow)
+        public void Merge(CMatrix subMatrix, int posCol, int posRow)
         {
             for (var row = 0; row < subMatrix.RowsCount; row++)
                 for (var column = 0; column < subMatrix.ColumnsCount; column++)
@@ -119,7 +132,7 @@ namespace tetris.NET
                         this[column + posCol, row + posRow].Swap(subMatrix[column, row]);
         }
 
-        public bool FillFirstNotFullRow(T element)
+        public bool FillFirstNotFullRow(Brick element)
         {
             var full = true;
             var row = 0;

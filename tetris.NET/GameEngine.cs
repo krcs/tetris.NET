@@ -1,94 +1,107 @@
 ﻿/*
- 
- tetris.NET (16k)
- Author: Krzysztof Cieślak (K!)  
 
- */
+Tetris.NET
+
+MIT License
+
+Copyright (c) 2014 Krzysztof Cieślak
+
+Permission  is hereby granted, free  of charge,  to any person obtaining a copy
+of this software and associated documentation files (the "Software"),  to  deal
+in  the Software without restriction,  including without limitation the  rights
+to  use, copy,  modify,  merge, publish, distribute,  sublicense,  and/or  sell
+copies of the Software, and to permit persons to whom the Software is furnished
+to do so, subject to the following conditions:
+
+The above copyright notice and this  permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE  IS PROVIDED  "AS IS",  WITHOUT WARRANTY OF ANY  KIND,  EXPRESS OR
+IMPLIED,  INCLUDING  BUT NOT  LIMITED  TO  THE WARRANTIES  OF  MERCHANTABILITY,
+FITNESS  FOR  A  PARTICULAR  PURPOSE AND NONINFRINGEMENT.  IN  NO  EVENT  SHALL
+THE  AUTHORS  OR  COPYRIGHT  HOLDERS  BE  LIABLE  FOR  ANY  CLAIM,  DAMAGES  OR
+OTHER  LIABILITY,  WHETHER  IN  AN  ACTION  OF  CONTRACT,  TORT  OR  OTHERWISE,
+ARISING  FROM,  OUT  OF  OR  IN CONNECTION WITH  THE SOFTWARE  OR  THE  USE  OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+*/
+
 using System.Drawing;
 
 namespace tetris.NET
 {
-    class GameEngine
+    internal class GameEngine
     {
         private static GameEngine _instance;
-        private int _score;
-        private byte _level;
-        private GameState _state;
-        private readonly CMatrix<Brick> _board;
-        private CMatrix<Brick> _nextFigure;
-        private CMatrix<Brick> _player;
-
-        private int _playerColumn;
-        private int _playerRow;
 
         public static GameEngine Instance => _instance ?? (_instance = new GameEngine());
 
-        public GameState State => _state;
+        public GameState State { get; private set; }
 
-        public int Score => _score;
+        public int Score { get; private set; }
 
-        public byte Level => _level;
+        public byte Level { get; private set; }
 
-        public CMatrix<Brick> Board => _board;
+        public CMatrix Board { get; }
 
-        public CMatrix<Brick> NextFigure => _nextFigure;
+        public CMatrix NextFigure { get; private set; }
 
-        public CMatrix<Brick> Player => _player;
+        public CMatrix Player { get; private set; }
 
-        public int PlayerColumn => _playerColumn;
+        public int PlayerColumn { get; private set; }
 
-        public int PlayerRow => _playerRow;
+        public int PlayerRow { get; private set; }
 
         private GameEngine()
         {
-            _board = new CMatrix<Brick>(GameConstans.BOARD_WIDTH, GameConstans.BOARD_HEIGHT);
-            _player = new CMatrix<Brick>(1, 1);
-            _nextFigure = new CMatrix<Brick>(1, 1);
-            _state = GameState.Stopped;
+            Board = new CMatrix(GameConstans.BOARD_WIDTH, GameConstans.BOARD_HEIGHT);
+            Player = new CMatrix(1, 1);
+            NextFigure = new CMatrix(1, 1);
+            State = GameState.Stopped;
         }
 
         public void Start()
         {
-            _state = GameState.Running;
-            _score = _level = 0;
-            _board.Clear();
-            _nextFigure = GenerateFigure(GameHelper.RandomFigure(), GameHelper.RandomColor());
+            State = GameState.Running;
+            Score = Level = 0;
+            Board.Clear();
+            NextFigure = GenerateFigure(GameHelper.RandomFigure(), GameHelper.RandomColor());
             InitPlayer();
         }
 
-        public void Pause() { _state = GameState.Paused; }
+        public void Pause() => State = GameState.Paused; 
 
-        public void Resume() { _state = GameState.Running; }
+        public void Resume() => State = GameState.Running; 
 
-        public void Stop() { _state = GameState.Stopped; }
+        public void Stop() => State = GameState.Stopped; 
 
         private void SetPlayerPosition(int column, int row)
         {
-            _playerColumn = column;
-            _playerRow = row;
+            PlayerColumn = column;
+            PlayerRow = row;
         }
 
         public void MovePlayer(PlayerMove direction)
         {
-            if (!_state.Equals(GameState.Running))
+            if (!State.Equals(GameState.Running))
                 return;
-
+  
             switch (direction)
             {
                 case (PlayerMove.Left):
-                    CheckAndMove(_playerColumn - 1, _playerRow);
+                    CheckAndMove(PlayerColumn - 1, PlayerRow);
                     break;
                 case (PlayerMove.Right):
-                    CheckAndMove(_playerColumn + 1, _playerRow);
+                    CheckAndMove(PlayerColumn + 1, PlayerRow);
                     break;
                 case (PlayerMove.Rotate):
                     CheckAndRotate();
                     break;
                 case (PlayerMove.Up):
-                    CheckAndMove(_playerColumn, _playerRow - 1);
+                    CheckAndMove(PlayerColumn, PlayerRow - 1);
                     break;
                 case (PlayerMove.Down):
-                    if (!CheckAndMove(_playerColumn, _playerRow + 1))
+                    if (!CheckAndMove(PlayerColumn, PlayerRow + 1))
                         NextSet();
                     break;
             }
@@ -96,7 +109,7 @@ namespace tetris.NET
 
         private bool CheckAndMove(int column, int row)
         {
-            bool result = _board.CanOverlay(_player, column, row);
+            var result = Board.CanOverlay(Player, column, row);
 
             if (result)
                 SetPlayerPosition(column, row);
@@ -106,32 +119,28 @@ namespace tetris.NET
 
         private void CheckAndRotate()
         {
-            CMatrix<Brick> buf = _player.RotateCW90();
-            bool result = _board.CanOverlay(buf, _playerColumn, _playerRow);
-
-            if (result)
-                _player = buf;
+            var buf = Player.RotateCW90();
+            if (Board.CanOverlay(buf, PlayerColumn, PlayerRow))
+                Player = buf;
         }
 
         private void NextSet()
         {
-            _board.Merge(_player, _playerColumn, _playerRow);
-
-            _score += Scoring(_board.ClearAndMoveFullRows());
-
+            Board.Merge(Player, PlayerColumn, PlayerRow);
+            Score += Scoring(Board.ClearAndMoveFullRows());
             InitPlayer();
         }
 
         private void InitPlayer()
         {
-            _player = _nextFigure;
+            Player = NextFigure;
 
             SetPlayerPosition(3, 0);
 
-            if (!_board.CanOverlay(_player, _playerColumn, _playerRow))
-                _state = GameState.Stopped;
+            if (!Board.CanOverlay(Player, PlayerColumn, PlayerRow))
+                State = GameState.Stopped;
 
-            _nextFigure = GenerateFigure(GameHelper.RandomFigure(), GameHelper.RandomColor());
+            NextFigure = GenerateFigure(GameHelper.RandomFigure(), GameHelper.RandomColor());
         }
 
         private int Scoring(int clearedRows)
@@ -139,13 +148,13 @@ namespace tetris.NET
             switch (clearedRows)
             {
                 case 1:
-                    return 40 * _level;
+                    return 40 * Level;
                 case 2:
-                    return 100 * _level;
+                    return 100 * Level;
                 case 3:
-                    return 300 * _level;
+                    return 300 * Level;
                 case 4:
-                    return 1200 * _level;
+                    return 1200 * Level;
                 default:
                     return 0;
             }
@@ -155,34 +164,34 @@ namespace tetris.NET
         {
             byte newSpeed = 1;
 
-            if (GameHelper.Between(_level, 0, 2000))
+            if (Score >= 0 && Score < 2000)
                 newSpeed = 1;
-            if (GameHelper.Between(_score, 2000, 10000))
+            if (Score >= 2000 && Score < 10000)
                 newSpeed = 2;
-            if (GameHelper.Between(_score, 10000, 20000))
+            if (Score >= 10000 && Score < 20000)
                 newSpeed = 3;
-            if (GameHelper.Between(_score, 20000, 40000))
+            if (Score >= 20000 && Score < 40000)
                 newSpeed = 4;
-            if (GameHelper.Between(_score, 40000, 60000))
+            if (Score >= 40000 && Score < 60000)
                 newSpeed = 5;
-            if (_score >= 60000)
+            if (Score >= 60000)
                 newSpeed = 6;
 
-            if (_level == newSpeed)
+            if (Level == newSpeed)
                 return false;
 
-            _level = newSpeed;
+            Level = newSpeed;
             return true;
         }
 
-        private CMatrix<Brick> GenerateFigure(FigureType type, Color color)
+        private CMatrix GenerateFigure(FigureType type, Color color)
         {
-            CMatrix<Brick> result;
+            CMatrix result;
 
             switch (type)
             {
                 case FigureType.I:
-                    result = new CMatrix<Brick>(5, 5);
+                    result = new CMatrix(5, 5);
                     result[2, 0].Set(new Brick(GameConstans.BRICKSIZE, color)); // 00100
                     result[2, 1].Set(new Brick(GameConstans.BRICKSIZE, color)); // 00100
                     result[2, 2].Set(new Brick(GameConstans.BRICKSIZE, color)); // 00100
@@ -191,7 +200,7 @@ namespace tetris.NET
                     break;
 
                 case FigureType.J:
-                    result = new CMatrix<Brick>(3, 3);
+                    result = new CMatrix(3, 3);
                     result[1, 0].Set(new Brick(GameConstans.BRICKSIZE, color)); // 010
                     result[1, 1].Set(new Brick(GameConstans.BRICKSIZE, color)); // 010
                     result[0, 2].Set(new Brick(GameConstans.BRICKSIZE, color)); // 110
@@ -199,7 +208,7 @@ namespace tetris.NET
                     break;
 
                 case FigureType.L:
-                    result = new CMatrix<Brick>(3, 3);
+                    result = new CMatrix(3, 3);
                     result[1, 0].Set(new Brick(GameConstans.BRICKSIZE, color)); // 010
                     result[1, 1].Set(new Brick(GameConstans.BRICKSIZE, color)); // 010
                     result[1, 2].Set(new Brick(GameConstans.BRICKSIZE, color)); // 011
@@ -207,7 +216,7 @@ namespace tetris.NET
                     break;
 
                 case FigureType.O:
-                    result = new CMatrix<Brick>(2, 2);
+                    result = new CMatrix(2, 2);
                     result[0, 0].Set(new Brick(GameConstans.BRICKSIZE, color)); // 
                     result[1, 0].Set(new Brick(GameConstans.BRICKSIZE, color)); // 11
                     result[0, 1].Set(new Brick(GameConstans.BRICKSIZE, color)); // 11
@@ -215,7 +224,7 @@ namespace tetris.NET
                     break;
 
                 case FigureType.S:
-                    result = new CMatrix<Brick>(3, 3);
+                    result = new CMatrix(3, 3);
                     result[1, 0].Set(new Brick(GameConstans.BRICKSIZE, color)); // 
                     result[2, 0].Set(new Brick(GameConstans.BRICKSIZE, color)); // 011
                     result[0, 1].Set(new Brick(GameConstans.BRICKSIZE, color)); // 110
@@ -223,7 +232,7 @@ namespace tetris.NET
                     break;
 
                 case FigureType.T:
-                    result = new CMatrix<Brick>(3, 3);
+                    result = new CMatrix(3, 3);
                     result[1, 0].Set(new Brick(GameConstans.BRICKSIZE, color)); // 010
                     result[0, 1].Set(new Brick(GameConstans.BRICKSIZE, color)); // 110
                     result[1, 1].Set(new Brick(GameConstans.BRICKSIZE, color)); // 010
@@ -231,44 +240,34 @@ namespace tetris.NET
                     break;
 
                 case FigureType.Z:
-                    result = new CMatrix<Brick>(3, 3);
+                    result = new CMatrix(3, 3);
                     result[0, 0].Set(new Brick(GameConstans.BRICKSIZE, color)); // 
                     result[1, 0].Set(new Brick(GameConstans.BRICKSIZE, color)); // 110
                     result[1, 1].Set(new Brick(GameConstans.BRICKSIZE, color)); // 011
                     result[2, 1].Set(new Brick(GameConstans.BRICKSIZE, color)); // 000
                     break;
                 default:
-                    result = new CMatrix<Brick>(1, 1);
+                    result = new CMatrix(1, 1);
                     break;
             }
-
             return result;
         }
 
-        public void DrawMatrix(CMatrix<Brick> matrix, Graphics gfx)
+        public void DrawMatrix(CMatrix matrix, Graphics gfx) => DrawMatrix(0, 0, matrix, gfx);
+        
+        public void DrawMatrix(int columnPos, int rowPos, CMatrix matrix, Graphics gfx)
         {
-            DrawMatrix(0, 0, matrix, gfx);
-        }
-
-        public void DrawMatrix(int columnPos, int rowPos, CMatrix<Brick> matrix, Graphics gfx)
-        {
-            for (int row = 0; row < matrix.RowsCount; row++)
-                for (int column = 0; column < matrix.ColumnsCount; column++)
-                {
+            for (var row = 0; row < matrix.RowsCount; row++)
+                for (var column = 0; column < matrix.ColumnsCount; column++)
                     if (matrix[column, row].HasElement)
                     {
-                        Brick currentBrick = matrix[column, row].Peek();
-                        currentBrick.X = GameHelper.IndexToPixelX(column + columnPos);
-                        currentBrick.Y = GameHelper.IndexToPixelY(row + rowPos);
+                        var currentBrick = matrix[column, row].Peek();
+                        currentBrick.X = GameHelper.IndexToPixel(column + columnPos);
+                        currentBrick.Y = GameHelper.IndexToPixel(row + rowPos);
                         currentBrick.Draw(gfx);
                     }
-                }
         }
 
-        public bool FillEmptyRow()
-        {
-            return _board.FillFirstNotFullRow(GameHelper.RandomBrick());
-        }
-
+        public bool FillEmptyRow() => Board.FillFirstNotFullRow(GameHelper.RandomBrick());
     }
 }

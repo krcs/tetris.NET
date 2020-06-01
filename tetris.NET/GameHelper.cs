@@ -1,21 +1,41 @@
 ﻿/*
- 
- tetris.NET (16k)
- Author: Krzysztof Cieślak (K!)  
 
- */
+Tetris.NET
+
+MIT License
+
+Copyright (c) 2014 Krzysztof Cieślak
+
+Permission  is hereby granted, free  of charge,  to any person obtaining a copy
+of this software and associated documentation files (the "Software"),  to  deal
+in  the Software without restriction,  including without limitation the  rights
+to  use, copy,  modify,  merge, publish, distribute,  sublicense,  and/or  sell
+copies of the Software, and to permit persons to whom the Software is furnished
+to do so, subject to the following conditions:
+
+The above copyright notice and this  permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE  IS PROVIDED  "AS IS",  WITHOUT WARRANTY OF ANY  KIND,  EXPRESS OR
+IMPLIED,  INCLUDING  BUT NOT  LIMITED  TO  THE WARRANTIES  OF  MERCHANTABILITY,
+FITNESS  FOR  A  PARTICULAR  PURPOSE AND NONINFRINGEMENT.  IN  NO  EVENT  SHALL
+THE  AUTHORS  OR  COPYRIGHT  HOLDERS  BE  LIABLE  FOR  ANY  CLAIM,  DAMAGES  OR
+OTHER  LIABILITY,  WHETHER  IN  AN  ACTION  OF  CONTRACT,  TORT  OR  OTHERWISE,
+ARISING  FROM,  OUT  OF  OR  IN CONNECTION WITH  THE SOFTWARE  OR  THE  USE  OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+*/
+
 using System;
 using System.Drawing;
 
 namespace tetris.NET
 {
-    static class GameHelper
+    internal static class GameHelper
     {
         private static readonly Random Random = new Random();
 
-        public static int IndexToPixelX(int columnIndex) { return (columnIndex * GameConstans.BRICKSIZE) + columnIndex; }
-
-        public static int IndexToPixelY(int rowIndex) { return (rowIndex * GameConstans.BRICKSIZE) + rowIndex; }
+        public static int IndexToPixel(int idx) => (idx * GameConstans.BRICKSIZE) + idx;
 
         public static FigureType RandomFigure()
         {
@@ -32,16 +52,9 @@ namespace tetris.NET
             }
         }
 
-        public static Color RandomColor()
-        {
-            return Color.FromArgb(Random.Next(100, 255), Random.Next(100, 255), Random.Next(100, 255));
-        }
-
-        public static bool Between(int number, int lower, int upper)
-        {
-            return number >= lower && number < upper;
-        }
-
+        public static Color RandomColor() =>
+            Color.FromArgb(Random.Next(100, 255), Random.Next(100, 255), Random.Next(100, 255));
+          
         public static int GetSpeedByLevel(int level)
         {
             switch (level)
@@ -63,9 +76,6 @@ namespace tetris.NET
             }
         }
 
-        public static Brick RandomBrick()
-        {
-            return new Brick(GameConstans.BRICKSIZE, RandomColor());
-        }
+        public static Brick RandomBrick() => new Brick(GameConstans.BRICKSIZE, RandomColor());
     }
 }

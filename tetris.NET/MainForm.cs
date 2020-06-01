@@ -1,9 +1,31 @@
 ﻿/*
- 
- tetris.NET (16k)
- Author: Krzysztof Cieślak (K!)  
 
- */
+Tetris.NET
+
+MIT License
+
+Copyright (c) 2014 Krzysztof Cieślak
+
+Permission  is hereby granted, free  of charge,  to any person obtaining a copy
+of this software and associated documentation files (the "Software"),  to  deal
+in  the Software without restriction,  including without limitation the  rights
+to  use, copy,  modify,  merge, publish, distribute,  sublicense,  and/or  sell
+copies of the Software, and to permit persons to whom the Software is furnished
+to do so, subject to the following conditions:
+
+The above copyright notice and this  permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE  IS PROVIDED  "AS IS",  WITHOUT WARRANTY OF ANY  KIND,  EXPRESS OR
+IMPLIED,  INCLUDING  BUT NOT  LIMITED  TO  THE WARRANTIES  OF  MERCHANTABILITY,
+FITNESS  FOR  A  PARTICULAR  PURPOSE AND NONINFRINGEMENT.  IN  NO  EVENT  SHALL
+THE  AUTHORS  OR  COPYRIGHT  HOLDERS  BE  LIABLE  FOR  ANY  CLAIM,  DAMAGES  OR
+OTHER  LIABILITY,  WHETHER  IN  AN  ACTION  OF  CONTRACT,  TORT  OR  OTHERWISE,
+ARISING  FROM,  OUT  OF  OR  IN CONNECTION WITH  THE SOFTWARE  OR  THE  USE  OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+*/
+
 using System;
 using System.Reflection;
 using System.Windows.Forms;
@@ -11,23 +33,21 @@ using System.Drawing;
 
 namespace tetris.NET
 {
-    public class MainForm : Form
+    internal class MainForm : Form
     {
-        private Panel _boardPanel;
-        private Panel _nextPanel;
-        private Label _title;
-        private Label _score;
-        private Label _level;
-        private Label _nextFigure;
-        private Button _start;
-        private Timer _gameTimer;
-        private Timer _refreshTimer;
-
-        private void InitForm()
+        private readonly Panel _boardPanel;
+        private readonly Panel _nextPanel;
+        private readonly Label _score;
+        private readonly Label _level;
+        private readonly Button _start;
+        private readonly Timer _gameTimer;
+        private readonly Timer _refreshTimer;
+        
+        internal MainForm()
         {
-            FontFamily mainFont = new FontFamily("Verdana");
+            var mainFont = new FontFamily("Verdana");
 
-            Text = "Tetris.NET (K!) 16k";
+            Text = "Tetris.NET (K!)";
             ClientSize = new Size(430, 510);
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -56,15 +76,14 @@ namespace tetris.NET
             SetDoubleBuffer(_nextPanel);
             Controls.Add(_nextPanel);
 
-            _title = new Label
+            Controls.Add(new Label
             {
                 Text = "tetris.NET",
                 Location = new Point(273, 8),
                 AutoSize = true,
                 ForeColor = Color.LightGreen,
                 Font = new Font(mainFont, 15.0f, FontStyle.Bold)
-            };
-            Controls.Add(_title);
+            });
 
             _score = new Label
             {
@@ -86,16 +105,15 @@ namespace tetris.NET
             };
             Controls.Add(_level);
 
-            _nextFigure = new Label
+            Controls.Add(new Label
             {
                 Text = "Next:",
                 Location = new Point(278, 60),
                 AutoSize = true,
                 ForeColor = Color.LightSkyBlue,
                 Font = new Font(mainFont, 14.0f, FontStyle.Bold)
-            };
-            Controls.Add(_nextFigure);
-
+            });
+            
             _start = new Button
             {
                 Text = "START",
@@ -105,7 +123,7 @@ namespace tetris.NET
                 ForeColor = Color.White,
                 BackColor = Color.FromArgb(96, 60, 187),
                 Font = new Font(mainFont, 13.0f, FontStyle.Bold),
-                Enabled = true
+                Enabled = true,
             };
             _start.FlatAppearance.BorderSize = 0;
             _start.Click += StartClick;
@@ -120,8 +138,6 @@ namespace tetris.NET
 
             UpdateScoreText();
         }
-
-        public MainForm() { InitForm(); }
 
         private void StartClick(object sender, EventArgs e)
         {
@@ -159,18 +175,14 @@ namespace tetris.NET
                 _refreshTimer.Stop();
             }
             _start.Text = buttonText;
-
         }
 
-        private void UpdateScoreText()
-        {
-            string score = GameEngine.Instance.Score.ToString();
-            _score.Text = "Score: " + score.PadLeft(8, '0');
-        }
+        private void UpdateScoreText() =>
+            _score.Text = $"Score: {GameEngine.Instance.Score.ToString().PadLeft(8, '0')}";
 
         private void DrawNext(object sender, PaintEventArgs e)
         {
-            int column = GameEngine.Instance.NextFigure.RowsCount == 5 ? -1 : 0;
+            var column = GameEngine.Instance.NextFigure.RowsCount == 5 ? -1 : 0;
             GameEngine.Instance.DrawMatrix(column, 0, GameEngine.Instance.NextFigure, e.Graphics);
         }
 
@@ -209,14 +221,13 @@ namespace tetris.NET
 
         private void ChangeSpeed()
         {
-            if (GameEngine.Instance.TryIncreaseLevel())
-            {
-                _gameTimer.Interval = GameHelper.GetSpeedByLevel(GameEngine.Instance.Level);
-                _gameTimer.Stop();
-                _gameTimer.Start();
-                _level.Text = "Level: " + GameEngine.Instance.Level;
-            }
+            if (!GameEngine.Instance.TryIncreaseLevel())
+                return;
 
+            _gameTimer.Interval = GameHelper.GetSpeedByLevel(GameEngine.Instance.Level);
+            _gameTimer.Stop();
+            _gameTimer.Start();
+            _level.Text = $"Level: {GameEngine.Instance.Level}";
         }
 
         private void RefreshTick(object sender, EventArgs e)
@@ -227,7 +238,7 @@ namespace tetris.NET
                 _boardPanel.Refresh();
                 _nextPanel.Refresh();
             }
-            if (GameEngine.Instance.State.Equals(GameState.Stopped))
+            else if (GameEngine.Instance.State.Equals(GameState.Stopped))
             {
                 _boardPanel.Refresh();
                 bool isLastRow = GameEngine.Instance.FillEmptyRow();
@@ -238,33 +249,31 @@ namespace tetris.NET
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            if (keyData == Keys.Up)
+            switch (keyData)
             {
-                GameEngine.Instance.MovePlayer(PlayerMove.Rotate);
-                return true;
+                case Keys.Up:
+                    GameEngine.Instance.MovePlayer(PlayerMove.Rotate);
+                    return true;
+
+                case Keys.Down:
+                    GameEngine.Instance.MovePlayer(PlayerMove.Down);
+                    return true;
+
+                case Keys.Left:
+                    GameEngine.Instance.MovePlayer(PlayerMove.Left);
+                    return true;
+
+                case Keys.Right:
+                    GameEngine.Instance.MovePlayer(PlayerMove.Right);
+                    return true;
+
+                case Keys.Escape:
+                    GameEngine.Instance.Stop();
+                    return true;
+
+                default:
+                    return base.ProcessCmdKey(ref msg, keyData);
             }
-            if (keyData == Keys.Down)
-            {
-                GameEngine.Instance.MovePlayer(PlayerMove.Down);
-                return true;
-            }
-            if (keyData == Keys.Left)
-            {
-                GameEngine.Instance.MovePlayer(PlayerMove.Left);
-                return true;
-            }
-            if (keyData == Keys.Right)
-            {
-                GameEngine.Instance.MovePlayer(PlayerMove.Right);
-                return true;
-            }
-            if (keyData == Keys.Escape)
-            {
-                GameEngine.Instance.Stop();
-                return true;
-            }
-            else
-                return base.ProcessCmdKey(ref msg, keyData);
         }
     }
 }
